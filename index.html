@@ -1,90 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>English Pronunciation</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>中英對照與語音示範</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      background: #f4f4f4;
       text-align: center;
-      padding: 30px;
+      margin: 20px;
     }
     h1 {
-      font-size: 2rem;
       margin-bottom: 20px;
     }
-    .button-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
+    /* 單字容器 */
+    .word-container {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      width: 140px;
+      vertical-align: top;
     }
-    button {
-      padding: 15px 30px;
-      font-size: 20px;
+    .word-container button {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
       border: none;
-      border-radius: 12px;
+      border-radius: 4px;
       background-color: #007bff;
-      color: white;
+      color: #fff;
       cursor: pointer;
-      transition: background 0.3s ease;
+      transition: background 0.3s;
     }
-    button:hover {
+    .word-container button:hover {
       background-color: #0056b3;
     }
-    @media (max-width: 500px) {
-      button {
-        width: 80%;
-      }
+    .extra {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    .extra img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border: 1px solid #ccc;
+    }
+    .toggle-buttons {
+      margin-top: 20px;
+    }
+    .toggle-buttons button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      margin: 0 10px;
+      cursor: pointer;
+      background-color: #28a745;
+      color: #fff;
+      transition: background 0.3s;
+    }
+    .toggle-buttons button:hover {
+      background-color: #218838;
     }
   </style>
 </head>
 <body>
-  <h1>點擊按鈕發音 V4</h1>
-  <div class="button-container">
-    <button onclick="speakWord('apple')">apple</button>
-    <button onclick="speakWord('book')">book</button>
-    <button onclick="speakWord('cat')">cat</button>
-    <button onclick="speakWord('dog')">dog</button>
-    <button onclick="speakWord('egg')">egg</button>
+  <h1>英語發音與中英對照示範 V6</h1>
+  
+  <div id="words-container">
+    <!-- 透過 JavaScript 動態產生單字容器 -->
   </div>
-
+  
+  <div class="toggle-buttons">
+    <!-- 切換模式按鈕 -->
+    <button id="btn-translate">中英對照</button>
+    <button id="btn-english">只有英文</button>
+  </div>
+  
   <script>
-    // 儲存語音列表並嘗試加載
-    let voices = [];
-    function loadVoices() {
-      voices = window.speechSynthesis.getVoices();
-      console.log("Available voices:", voices);
-    }
-    // 某些瀏覽器語音列表可能不馬上可用
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    loadVoices();
+    // 每個單字資料，圖片路徑修改為使用 .png 檔案
+    const wordsData = [
+      { word: "apple",     translation: "蘋果",      image: "apple.png" },
+      { word: "book",      translation: "書",        image: "book.png" },
+      { word: "cat",       translation: "貓",        image: "cat.png" },
+      { word: "dog",       translation: "狗",        image: "dog.png" },
+      { word: "egg",       translation: "蛋",        image: "egg.png" },
+      { word: "fish",      translation: "魚",        image: "fish.png" },
+      { word: "goat",      translation: "山羊",      image: "goat.png" },
+      { word: "hand",      translation: "手",        image: "hand.png" },
+      { word: "ice cream", translation: "冰淇淋",    image: "icecream.png" },
+      { word: "joke",      translation: "笑話",      image: "joke.png" }
+    ];
 
-    function speakWord(word) {
-      console.log("Speaking word:", word);
+    // 目前是否處於「中英對照」模式
+    let showTranslation = false;
+    
+    // 參考主要容器
+    const container = document.getElementById("words-container");
+
+    // 建立每個單字的容器與按鈕
+    wordsData.forEach((item, index) => {
+      const div = document.createElement("div");
+      div.className = "word-container";
+      div.id = "word-" + index;
       
-      // 關鍵點：先取消之前可能存在的語音
+      // 建立單字按鈕
+      const btn = document.createElement("button");
+      btn.textContent = item.word;
+      btn.addEventListener("click", () => {
+        speakWord(item.word);
+      });
+      div.appendChild(btn);
+      
+      // 預留區塊：放置圖片與中文翻譯 (初始為空)
+      const extraDiv = document.createElement("div");
+      extraDiv.className = "extra";
+      extraDiv.id = "extra-" + index;
+      div.appendChild(extraDiv);
+      
+      container.appendChild(div);
+    });
+    
+    // 語音發音函式：點擊單字按鈕後播放對應英文單字
+    function speakWord(text) {
+      // 先取消可能存在的發音隊列
       window.speechSynthesis.cancel();
       
-      // 建立新的 SpeechSynthesisUtterance
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = 'en-US';
-
-      // 嘗試選擇 en-US 語系的語音（若可用）
-      if (voices.length > 0) {
-        const enVoice = voices.find(v => v.lang === 'en-US') || voices[0];
-        if (enVoice) {
-          utterance.voice = enVoice;
-        }
-      } else {
-        console.warn("語音清單尚未載入");
-      }
-
-      console.log("Using voice:", utterance.voice);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
       window.speechSynthesis.speak(utterance);
     }
+    
+    // 「中英對照」模式：顯示圖片與中文翻譯
+    document.getElementById("btn-translate").addEventListener("click", () => {
+      showTranslation = true;
+      wordsData.forEach((item, index) => {
+        const extraDiv = document.getElementById("extra-" + index);
+        extraDiv.innerHTML = `
+          <img src="${item.image}" alt="${item.word}"><br>
+          ${item.translation}
+        `;
+      });
+    });
+    
+    // 「只有英文」模式：清除圖片與翻譯
+    document.getElementById("btn-english").addEventListener("click", () => {
+      showTranslation = false;
+      wordsData.forEach((item, index) => {
+        const extraDiv = document.getElementById("extra-" + index);
+        extraDiv.innerHTML = "";
+      });
+    });
   </script>
 </body>
 </html>

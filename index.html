@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-  <h1>點擊按鈕發音 V3</h1>
+  <h1>點擊按鈕發音 V4</h1>
   <div class="button-container">
     <button onclick="speakWord('apple')">apple</button>
     <button onclick="speakWord('book')">book</button>
@@ -52,39 +52,37 @@
   </div>
 
   <script>
-    // 儲存語音列表
+    // 儲存語音列表並嘗試加載
     let voices = [];
-
-    // 載入語音清單，並用 console.log 除錯
     function loadVoices() {
       voices = window.speechSynthesis.getVoices();
       console.log("Available voices:", voices);
     }
-    
-    // 當語音改變時（部分瀏覽器需要這樣處理）
+    // 某些瀏覽器語音列表可能不馬上可用
     window.speechSynthesis.onvoiceschanged = loadVoices;
     loadVoices();
 
     function speakWord(word) {
-      // 若語音尚未載入完成，顯示警告
-      if (voices.length === 0) {
-        console.warn("語音尚未完全載入，請稍候再試");
-        loadVoices();
-        return;
-      }
-
+      console.log("Speaking word:", word);
+      
+      // 關鍵點：先取消之前可能存在的語音
+      window.speechSynthesis.cancel();
+      
+      // 建立新的 SpeechSynthesisUtterance
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = 'en-US';
 
-      // 嘗試選出一個 en-US 語系的語音，如果找不到就用第一個
-      const enVoice = voices.find(v => v.lang === 'en-US') || voices[0];
-      if (enVoice) {
-        utterance.voice = enVoice;
+      // 嘗試選擇 en-US 語系的語音（若可用）
+      if (voices.length > 0) {
+        const enVoice = voices.find(v => v.lang === 'en-US') || voices[0];
+        if (enVoice) {
+          utterance.voice = enVoice;
+        }
       } else {
-        console.warn("找不到適合的語音");
+        console.warn("語音清單尚未載入");
       }
 
-      console.log("Speaking word:", word, "using voice:", utterance.voice);
+      console.log("Using voice:", utterance.voice);
       window.speechSynthesis.speak(utterance);
     }
   </script>

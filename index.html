@@ -3,7 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>單字學習考試 V13</title>
+  <title>單字學習考試 V14</title>
+  <!-- Firebase 相容版本 -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script>
+    // 請將下列 firebaseConfig 替換為您的設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvHvJBoDrfqXMZ-04DV6cmx-6ggw_skl0",
+      authDomain: "engg-3c3b6.firebaseapp.com",
+      projectId: "engg-3c3b6",
+      storageBucket: "engg-3c3b6.firebasestorage.app",
+      messagingSenderId: "703539214129",
+      appId: "1:703539214129:web:b97b1f3c4cb51fbe88e210",
+      measurementId: "G-HXC84CTPGL"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
   <style>
     /* 全站風格：背景黑色，按鈕無陰影 */
     body {
@@ -224,7 +241,7 @@
     #resultPanel button:hover {
       background-color: #0056b3;
     }
-    /* 全站排行榜（學習與考試模式均顯示） */
+    /* 全站排行榜 */
     #globalLeaderboard {
       margin-top: 30px;
       padding: 15px;
@@ -246,7 +263,7 @@
   <header>
     <button onclick="showMode('vocab')">學習模式</button>
     <button onclick="showMode('examSetup')">考試模式</button>
-    <!-- 將【結束考試】按鈕放到 header，僅於考試進行中顯示 -->
+    <!-- 結束考試按鈕放在 header，僅考試進行中時顯示 -->
     <button id="headerFinishExamBtn" onclick="headerFinishExam()" style="display:none;">結束考試</button>
   </header>
   
@@ -301,14 +318,14 @@
     <p class="examInfo">剩餘作答時間：<span id="examTimer">0.00</span> 秒</p>
     <p class="examInfo">總作答時間：<span id="totalTime">0.00</span> 秒</p>
     <p class="examInfo">目前得分：<span id="examScore">0</span></p>
-    <!-- 題目區旁顯示【結束考試】（header的按鈕將同步控制，不再於這邊顯示） -->
+    <!-- header 的【結束考試】按鈕同步控制，於此區不再重複顯示 -->
     <!-- 答錯時顯示正確答案與圖片 -->
     <div id="correctDisplay"></div>
-    <!-- 若答錯則顯示【下一題】按鈕 -->
+    <!-- 當答錯時顯示【下一題】按鈕 -->
     <button id="nextBtn">下一題</button>
   </div>
   
-  <!-- 結果與排行榜 -->
+  <!-- 結果與排行榜區 -->
   <div id="resultPanel">
     <h2>考試結束！</h2>
     <p>你的分數：<span id="finalScore"></span> 分，總作答時間：<span id="finalTime"></span> 秒</p>
@@ -359,7 +376,7 @@
       { word: "ice cream",  translation: "冰淇淋",    image: "icecream.png" },
       { word: "joke",       translation: "笑話",      image: "joke.png" }
     ];
-    // 隨機暱稱資料（示範陣列，可擴充至20+項）
+    // 隨機暱稱資料（示範數量，可自行擴充至20+項）
     const animals = ["蜜獾", "北極熊", "熊貓", "無尾熊", "樹懶", "浣熊", "老虎", "獅子", "大象", "猴子"];
     const people = ["金城武", "車銀優", "梁山伯", "祝英台", "孔子", "孫中山", "岳飛", "武則天", "周恩來", "鄧小平"];
     const titles = ["船長", "總統", "將軍", "博士", "教授", "主任", "先生", "小姐", "大師", "專家"];
@@ -409,11 +426,9 @@
         examSettings.style.display = "block";
         examPanel.style.display = "none";
         resultPanel.style.display = "none";
-        // 更新預設暱稱並填入輸入欄
         const defNick = generateRandomNickname();
         document.getElementById("defaultNickEm").textContent = defNick;
         document.getElementById("examNickname").value = defNick;
-        // 顯示 header 的結束考試按鈕（若尚未開始考試則隱藏，開始考試後再顯示）
         document.getElementById("headerFinishExamBtn").style.display = "none";
       }
     }
@@ -428,17 +443,14 @@
       const div = document.createElement("div");
       div.className = "word-container";
       div.id = "vocab-" + index;
-      
       const btn = document.createElement("button");
       btn.textContent = item.word;
       btn.addEventListener("click", () => { speakWord(item.word); });
       div.appendChild(btn);
-      
       const extraDiv = document.createElement("div");
       extraDiv.className = "extra";
       extraDiv.id = "extra-" + index;
       div.appendChild(extraDiv);
-      
       vocabContainer.appendChild(div);
     });
     function speakWord(text) {
@@ -473,7 +485,7 @@
     let currentExamIndex = 0;
     let examScore = 0;
     let examTimerInterval;
-    let examQuestionStart; // 每題開始計時的毫秒時間
+    let examQuestionStart; // 每題開始計時毫秒
     let examTotalTime = 0; // 累計作答時間（秒）
     let examAnswered = false;
     let examModeOption = "nonrepeat";
@@ -492,8 +504,6 @@
       localStorage.setItem("nickname", userNick);
       const t = parseInt(document.getElementById("examTime").value);
       examTimeLimit = (!isNaN(t) && t>=1 && t<=100) ? t : 5;
-      
-      // 準備考題
       if(examModeOption === "nonrepeat") {
         examQuestions = wordsData.slice();
         shuffleArray(examQuestions);
@@ -507,7 +517,7 @@
       examScore = 0;
       examTotalTime = 0;
       document.getElementById("examScore").textContent = examScore;
-      // 開始考試後，顯示 header 的【結束考試】按鈕
+      // 考試開始後，顯示 header 結束考試按鈕
       document.getElementById("headerFinishExamBtn").style.display = "inline-block";
       examSettings.style.display = "none";
       examPanel.style.display = "block";
@@ -520,28 +530,24 @@
       document.getElementById("correctDisplay").innerHTML = "";
       document.getElementById("nextBtn").style.display = "none";
       document.getElementById("optionsContainer").innerHTML = "";
-      
       if(currentExamIndex >= examQuestions.length) {
         finishExam();
         return;
       }
-      
       const currentData = examQuestions[currentExamIndex];
       document.getElementById("examQNo").textContent = currentExamIndex + 1;
       const examQBtn = document.getElementById("examQuestionBtn");
       examQBtn.textContent = currentData.word;
       examQBtn.onclick = () => { playExamWord(currentData.word); };
-      
-      // 播放題目語音後立即開始計時
+      // 播放題目語音後立即開始倒數計時
       playExamWord(currentData.word);
       startExamTimer();
-      
-      // 產生選項：正確答案加上3個不重複錯誤答案
+      // 產生選項：正確答案與 3 個不重複錯誤答案
       const correct = currentData.translation;
       let wrongArr = wordsData.filter(item => item.translation !== correct)
                               .map(item => item.translation);
       shuffleArray(wrongArr);
-      wrongArr = wrongArr.slice(0,3);
+      wrongArr = wrongArr.slice(0, 3);
       let options = wrongArr.concat(correct);
       shuffleArray(options);
       options.forEach(opt => {
@@ -551,8 +557,6 @@
         btn.onclick = () => { if(!examAnswered) answerExam(opt); };
         document.getElementById("optionsContainer").appendChild(btn);
       });
-      
-      // 初始化時間顯示
       document.getElementById("examTimer").textContent = examTimeLimit.toFixed(2);
       document.getElementById("totalTime").textContent = examTotalTime.toFixed(2);
     }
@@ -598,7 +602,6 @@
       if(selected === currentData.translation) {
         examScore += 10;
         document.getElementById("examScore").textContent = examScore;
-        // 答對則自動延遲後載入下一題（不顯示【下一題】按鈕）
         setTimeout(() => {
           currentExamIndex++;
           loadExamQuestion();
@@ -629,12 +632,11 @@
     function finishExam() {
       clearInterval(examTimerInterval);
       examPanel.style.display = "none";
-      // 隱藏 header 的結束考試按鈕
       document.getElementById("headerFinishExamBtn").style.display = "none";
       showResults();
     }
     
-    // header 的結束考試按鈕功能
+    // header 結束考試按鈕
     function headerFinishExam() {
       finishExam();
     }
@@ -644,6 +646,7 @@
       document.getElementById("finalScore").textContent = examScore;
       document.getElementById("finalTime").textContent = examTotalTime.toFixed(2);
       updateLeaderboard();
+      uploadExamResult();
     }
     
     /* ===============================
@@ -651,7 +654,6 @@
     =============================== */
     function updateLeaderboard() {
       let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
-      // 強制轉為數字，確保分數能正確排序，即使分數為 90
       const nickname = localStorage.getItem("nickname") || generateRandomNickname();
       leaderboard.push({ nickname: nickname, score: parseInt(examScore, 10), time: parseFloat(examTotalTime.toFixed(2)) });
       leaderboard.sort((a, b) => {
@@ -691,7 +693,7 @@
     }
     
     /* ===============================
-       公用語音發音函式
+       公用語音函式
     =============================== */
     function speakWord(text) {
       window.speechSynthesis.cancel();
@@ -701,12 +703,30 @@
     }
     
     /* ===============================
-       當頁面載入時，讀取並顯示全站排行榜
+       當頁面載入時讀取並顯示全站排行榜
     =============================== */
     window.addEventListener("load", () => {
       const lb = JSON.parse(localStorage.getItem("leaderboard")) || [];
       displayGlobalLeaderboard(lb);
     });
+    
+    /* ===============================
+       Firebase 上傳成績
+    =============================== */
+    function uploadExamResult() {
+      db.collection("examResults").add({
+        nickname: localStorage.getItem("nickname"),
+        score: examScore,
+        time: examTotalTime,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(() => {
+        console.log("Exam result uploaded to Firebase.");
+      })
+      .catch((error) => {
+        console.error("Error uploading exam result:", error);
+      });
+    }
   </script>
 </body>
 </html>

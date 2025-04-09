@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>單字學習考試 V29</title>
+  <title>單字學習考試 V30</title>
   <!-- Firebase 相容版本 -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -262,12 +262,13 @@
   <header>
     <button onclick="showMode('vocab')">學習模式</button>
     <button onclick="showMode('examSetup')">考試模式</button>
+    <!-- 考試模式下的結束考試按鈕 -->
     <button id="headerFinishExamBtn" style="display:none;" onclick="headerFinishExam()">結束考試</button>
   </header>
 
   <!-- 學習模式 -->
   <div id="vocabPanel">
-    <h2>學習模式 V29</h2>  <!-- 學習模式  封面標題 -->
+    <h2>學習模式 V30</h2>  <!-- 學習模式 標題-->
     <div id="vocabContainer"></div>
     <div class="toggle-buttons">
       <button id="btn-translate">中英對照</button>
@@ -314,12 +315,19 @@
     <button id="nextBtn" style="display:none;">下一題</button>
   </div>
 
-  <!-- 考試結束結果 -->
-  <div id="resultPanel">
-    <h2>考試結束！</h2>
-    <p>你的分數：<span id="finalScore"></span> 分，總作答時間：<span id="finalTime"></span> 秒</p>
-    <button id="restartExamBtn">重新考試</button>
-  </div>
+<!-- 考試結束結果區 -->
+
+
+
+
+
+
+
+<div id="resultPanel">
+  <h2>考試結束！</h2>
+  <p>你的分數：<span id="finalScore"></span> 分，總作答時間：<span id="finalTime"></span> 秒</p>
+  <button id="restartExamBtn">重新考試</button>
+</div>
 
   <!-- 合併排行榜 -->
   <div id="globalLeaderboard">
@@ -338,122 +346,171 @@
   </div>
 
   <script>
-    // ----------------------------
-    // 全域函式：shuffleArray
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-    }
+  
+  
+  
+  // 綁定重新考試按鈕
+document.getElementById("restartExamBtn").addEventListener("click", restartExam);
 
-    // ----------------------------
+function restartExam(){
+  // 隱藏結果區
+  resultPanel.style.display = "none";
+  // 顯示考試設定區，讓使用者可確認設定（或直接進入考試模式）
+  examSettings.style.display = "block";
+  examPanel.style.display = "none";
+  // 若希望自動進入考試模式，可以選擇直接執行以下動作：
+  // 1. 重置狀態變數
+  currentExamIndex = 0;
+  examScore = 0;
+  examTotalTime = 0;
+  // 2. 自動隱藏考試設定區並顯示考試面板
+  examSettings.style.display = "none";
+  examPanel.style.display = "block";
+  // 3. 呼叫 startExam() 重新開始考試
+  startExam();
+}
+  
+  
+    // =============================
     // 共用單字資料
+    // =============================
     const wordsData = [
-      { word: "apple", translation: "蘋果", image: "apple.png" },
-      { word: "book", translation: "書", image: "book.png" },
-      { word: "cat", translation: "貓", image: "cat.png" },
-      { word: "dog", translation: "狗", image: "dog.png" },
-      { word: "egg", translation: "蛋", image: "egg.png" },
-      { word: "fish", translation: "魚", image: "fish.png" },
-      { word: "goat", translation: "山羊", image: "goat.png" },
-      { word: "hand", translation: "手", image: "hand.png" },
-      { word: "ice cream", translation: "冰淇淋", image: "icecream.png" },
-      { word: "joke", translation: "笑話", image: "joke.png" }
+      { word: "apple",      translation: "蘋果",      image: "apple.png" },
+      { word: "book",       translation: "書",        image: "book.png" },
+      { word: "cat",        translation: "貓",        image: "cat.png" },
+      { word: "dog",        translation: "狗",        image: "dog.png" },
+      { word: "egg",        translation: "蛋",        image: "egg.png" },
+      { word: "fish",       translation: "魚",        image: "fish.png" },
+      { word: "goat",       translation: "山羊",      image: "goat.png" },
+      { word: "hand",       translation: "手",        image: "hand.png" },
+      { word: "ice cream",  translation: "冰淇淋",    image: "icecream.png" },
+      { word: "joke",       translation: "笑話",      image: "joke.png" }
     ];
 
-    // ----------------------------
-    // 隨機暱稱組成邏輯更新
-    // 定義動物、食物、城市（各至少20項）
-    const animals = [
-      { zh: "蜜獾", en: "honey badger" },
-      { zh: "北極熊", en: "polar bear" },
-      { zh: "熊貓", en: "panda" },
-      { zh: "無尾熊", en: "koala" },
-      { zh: "樹懶", en: "sloth" },
-      { zh: "老虎", en: "tiger" },
-      { zh: "獅子", en: "lion" },
-      { zh: "大象", en: "elephant" },
-      { zh: "猴子", en: "monkey" },
-      { zh: "長頸鹿", en: "giraffe" },
-      { zh: "犀牛", en: "rhinoceros" },
-      { zh: "鱷魚", en: "crocodile" },
-      { zh: "袋鼠", en: "kangaroo" },
-      { zh: "鴕鳥", en: "ostrich" },
-      { zh: "刺蝟", en: "hedgehog" },
-      { zh: "海豚", en: "dolphin" },
-      { zh: "鯊魚", en: "shark" },
-      { zh: "企鵝", en: "penguin" },
-      { zh: "狼", en: "wolf" },
-      { zh: "狐狸", en: "fox" }
-    ];
+ 
+//沒放這個↓↓  按開始考試  會沒反應
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+//沒放這個↑↑  按開始考試  會沒反應
+ 
+// ------------------------------
+// 隨機暱稱組成邏輯更新
+// ------------------------------
 
-    const foods = [
-      { zh: "巧克力", en: "cola" }, // 依範例：巧克力cola
-      { zh: "牛排", en: "steak" },
-      { zh: "雞排", en: "fried chicken" },
-      { zh: "豬排", en: "pork chop" },
-      { zh: "可樂", en: "cola" },
-      { zh: "汽水", en: "soda" },
-      { zh: "洋芋片", en: "potato chips" },
-      { zh: "披薩", en: "pizza" },
-      { zh: "漢堡", en: "hamburger" },
-      { zh: "壽司", en: "sushi" },
-      { zh: "冰淇淋", en: "ice cream" },
-      { zh: "薯條", en: "fries" },
-      { zh: "義大利麵", en: "pasta" },
-      { zh: "沙拉", en: "salad" },
-      { zh: "蛋糕", en: "cake" },
-      { zh: "麵包", en: "bread" },
-      { zh: "咖啡", en: "coffee" },
-      { zh: "茶", en: "tea" },
-      { zh: "果汁", en: "juice" },
-      { zh: "冰沙", en: "smoothie" }
-    ];
 
-    const cities = [
-      { zh: "東京", en: "tokyo" },
-      { zh: "沖繩", en: "okinawa" },
-      { zh: "巴黎", en: "paris" },
-      { zh: "維也納", en: "vienna" },
-      { zh: "巴賽隆納", en: "barcelona" },
-      { zh: "杜拜", en: "dubai" },
-      { zh: "紐約", en: "new york" },
-      { zh: "倫敦", en: "london" },
-      { zh: "洛杉磯", en: "los angeles" },
-      { zh: "舊金山", en: "san francisco" },
-      { zh: "芝加哥", en: "chicago" },
-      { zh: "多倫多", en: "toronto" },
-      { zh: "雪梨", en: "sydney" },
-      { zh: "墨爾本", en: "melbourne" },
-      { zh: "首爾", en: "seoul" },
-      { zh: "上海", en: "shanghai" },
-      { zh: "香港", en: "hong kong" },
-      { zh: "新加坡", en: "singapore" },
-      { zh: "羅馬", en: "rome" },
-      { zh: "慕尼黑", en: "munich" }
-    ];
 
-    function randomFourDigits() {
-      return String(Math.floor(1000 + Math.random() * 9000));
+// 定義動物、食物、城市（各至少20項，必含指定項目）
+const animals = [
+  { zh: "蜜獾", en: "honey badger" },
+  { zh: "北極熊", en: "polar bear" },
+  { zh: "熊貓", en: "panda" },
+  { zh: "無尾熊", en: "koala" },
+  { zh: "樹懶", en: "sloth" },
+  { zh: "老虎", en: "tiger" },
+  { zh: "獅子", en: "lion" },
+  { zh: "大象", en: "elephant" },
+  { zh: "猴子", en: "monkey" },
+  { zh: "長頸鹿", en: "giraffe" },
+  { zh: "犀牛", en: "rhinoceros" },
+  { zh: "鱷魚", en: "crocodile" },
+  { zh: "袋鼠", en: "kangaroo" },
+  { zh: "鴕鳥", en: "ostrich" },
+  { zh: "刺蝟", en: "hedgehog" },
+  { zh: "海豚", en: "dolphin" },
+  { zh: "鯊魚", en: "shark" },
+  { zh: "企鵝", en: "penguin" },
+  { zh: "狼", en: "wolf" },
+  { zh: "狐狸", en: "fox" }
+];
+
+const foods = [
+  { zh: "巧克力", en: "cola" }, // 依範例：巧克力cola
+  { zh: "牛排", en: "steak" },
+  { zh: "雞排", en: "fried chicken" },
+  { zh: "豬排", en: "pork chop" },
+  { zh: "可樂", en: "cola" },
+  { zh: "汽水", en: "soda" },
+  { zh: "洋芋片", en: "potato chips" },
+  { zh: "披薩", en: "pizza" },
+  { zh: "漢堡", en: "hamburger" },
+  { zh: "壽司", en: "sushi" },
+  { zh: "冰淇淋", en: "ice cream" },
+  { zh: "薯條", en: "fries" },
+  { zh: "義大利麵", en: "pasta" },
+  { zh: "沙拉", en: "salad" },
+  { zh: "蛋糕", en: "cake" },
+  { zh: "麵包", en: "bread" },
+  { zh: "咖啡", en: "coffee" },
+  { zh: "茶", en: "tea" },
+  { zh: "果汁", en: "juice" },
+  { zh: "冰沙", en: "smoothie" }
+];
+
+const cities = [
+  { zh: "東京", en: "tokyo" },
+  { zh: "沖繩", en: "okinawa" },
+  { zh: "巴黎", en: "paris" },
+  { zh: "維也納", en: "vienna" },
+  { zh: "巴賽隆納", en: "barcelona" },
+  { zh: "杜拜", en: "dubai" },
+  { zh: "紐約", en: "new york" },
+  { zh: "倫敦", en: "london" },
+  { zh: "洛杉磯", en: "los angeles" },
+  { zh: "舊金山", en: "san francisco" },
+  { zh: "芝加哥", en: "chicago" },
+  { zh: "多倫多", en: "toronto" },
+  { zh: "雪梨", en: "sydney" },
+  { zh: "墨爾本", en: "melbourne" },
+  { zh: "首爾", en: "seoul" },
+  { zh: "上海", en: "shanghai" },
+  { zh: "香港", en: "hong kong" },
+  { zh: "新加坡", en: "singapore" },
+  { zh: "羅馬", en: "rome" },
+  { zh: "慕尼黑", en: "munich" }
+];
+
+// 隨機產生四位數字
+function randomFourDigits() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+// 更新後的隨機暱稱產生邏輯：
+// 類別1：從動物、食物、城市中隨機選一個（取中文）
+// 類別2：獨立隨機從動物、食物、城市中隨機選一個（取英文），不必與類別1相對應
+function generateRandomNickname() {
+  const categories = [animals, foods, cities];
+  const cat1 = categories[Math.floor(Math.random() * categories.length)];
+  const item1 = cat1[Math.floor(Math.random() * cat1.length)];
+
+  const cat2 = categories[Math.floor(Math.random() * categories.length)];
+  const item2 = cat2[Math.floor(Math.random() * cat2.length)];
+
+  return item1.zh + item2.en + "-" + randomFourDigits();
+}
+
+//--------------
+
+   
+   
+   
+    function speakWord(text){
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = "en-US";
+      window.speechSynthesis.speak(utt);
     }
 
-    // 隨機暱稱：從動物、食物、城市各自隨機選取，不一定對應
-    function generateRandomNickname() {
-      const categories = [animals, foods, cities];
-      const cat1 = categories[Math.floor(Math.random() * categories.length)];
-      const item1 = cat1[Math.floor(Math.random() * cat1.length)];
-
-      const cat2 = categories[Math.floor(Math.random() * categories.length)];
-      const item2 = cat2[Math.floor(Math.random() * cat2.length)];
-
-      return item1.zh + item2.en + "-" + randomFourDigits();
-    }
-
-    // ----------------------------
+    // =============================
     // 合併排行榜載入（去重）
+    // =============================
     async function loadCombinedLeaderboard() {
+      // 讀取 localStorage 成績（格式：{nickname, score, time}）
       let localLB = JSON.parse(localStorage.getItem("leaderboard")) || [];
+      // 從 Firebase 取得成績（以 limit 50 為示範）
       let firebaseLB = [];
       try {
         const querySnapshot = await firebase.firestore()
@@ -468,7 +525,9 @@
       } catch(e) {
         console.error("Error fetching firebase leaderboard", e);
       }
+      // 合併兩組成績
       let combined = localLB.concat(firebaseLB);
+      // 利用 Map 去重：以暱稱(trim) + "|" + 分數(Number) + "|" + 總作答時間(Number.toFixed(2)) 作為唯一鍵
       let uniqueMap = new Map();
       combined.forEach(entry => {
         const name = ((entry.name || entry.nickname) || "").trim();
@@ -476,33 +535,40 @@
         const time = Number(entry.time).toFixed(2);
         const key = `${name}|${score}|${time}`;
         if (!uniqueMap.has(key)) {
-          uniqueMap.set(key, { nickname: name, score: score, time: Number(time) });
+          uniqueMap.set(key, { 
+            nickname: name, 
+            score: score, 
+            time: Number(time) 
+          });
         }
       });
       let deduped = Array.from(uniqueMap.values());
+      // 排序：依分數高低，若分數相同則以作答時間較短為佳
       deduped.sort((a, b) => {
-        if (b.score === a.score) return a.time - b.time;
+        if(b.score === a.score) return a.time - b.time;
         return b.score - a.score;
       });
+      // 選出前 10 筆
       deduped = deduped.slice(0, 10);
       const tbody = document.getElementById("globalLeaderboardBody");
       tbody.innerHTML = "";
-      if (deduped.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='4'>目前尚無排行榜資料。</td></tr>";
+      if(deduped.length === 0) {
+         tbody.innerHTML = "<tr><td colspan='4'>目前尚無排行榜資料。</td></tr>";
       } else {
         deduped.forEach((entry, idx) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${idx + 1}</td>
-                          <td>${entry.nickname}</td>
-                          <td>${entry.score}</td>
-                          <td>${entry.time.toFixed(2)}</td>`;
-          tbody.appendChild(tr);
+           const tr = document.createElement("tr");
+           tr.innerHTML = `<td>${idx + 1}</td>
+                           <td>${entry.nickname}</td>
+                           <td>${entry.score}</td>
+                           <td>${entry.time.toFixed(2)}</td>`;
+           tbody.appendChild(tr);
         });
       }
     }
 
-    // ----------------------------
+    // =============================
     // 模式切換
+    // =============================
     const vocabPanel = document.getElementById("vocabPanel");
     const examSettings = document.getElementById("examSettings");
     const examPanel = document.getElementById("examPanel");
@@ -519,17 +585,20 @@
         examSettings.style.display = "block";
         examPanel.style.display = "none";
         resultPanel.style.display = "none";
+        // 初始化隨機暱稱填入，並更新提示（提示文字改為 "➔ "）
         const newNick = generateRandomNickname();
         document.getElementById("examNickname").value = "";
         document.getElementById("suggestedNickname").textContent = "➔ " + newNick;
       }
       headerFinishExamBtn.style.display = "none";
+      // 每次模式切換時更新排行榜
       loadCombinedLeaderboard();
     }
     showMode("vocab");
 
-    // ----------------------------
+    // =============================
     // 學習模式建立
+    // =============================
     const vocabContainer = document.getElementById("vocabContainer");
     document.getElementById("btn-translate").addEventListener("click", () => {
       wordsData.forEach((item, index) => {
@@ -541,6 +610,7 @@
         document.getElementById("extra-" + index).innerHTML = "";
       });
     });
+    // 建立學習模式單字按鈕
     wordsData.forEach((item, idx) => {
       const div = document.createElement("div");
       div.className = "word-container";
@@ -556,8 +626,9 @@
       vocabContainer.appendChild(div);
     });
 
-    // ----------------------------
+    // =============================
     // 考試設定區
+    // =============================
     document.getElementById("randomNickBtn").addEventListener("click", () => {
       const newNick = generateRandomNickname();
       document.getElementById("suggestedNickname").textContent = "➔ " + newNick;
@@ -710,11 +781,14 @@
       resultPanel.style.display = "block";
       document.getElementById("finalScore").textContent = examScore;
       document.getElementById("finalTime").textContent = examTotalTime.toFixed(2);
+      // 更新 localStorage 排行榜
       updateLocalLeaderboard();
+      // 上傳成績至 Firebase
       uploadExamResult();
+      // 更新合併排行榜
       loadCombinedLeaderboard();
     }
-    // ----------------------------
+    // =============================
     // 將考試成績寫入 localStorage（格式：{nickname, score, time}）
     function updateLocalLeaderboard(){
       let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
@@ -731,7 +805,7 @@
       leaderboard = leaderboard.slice(0, 10);
       localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
     }
-    // ----------------------------
+    // =============================
     // 將考試成績上傳至 Firebase Firestore
     function uploadExamResult(){
       const nickname = localStorage.getItem("nickname") || generateRandomNickname();
@@ -749,7 +823,7 @@
           console.error("成績上傳失敗", error);
         });
     }
-    // ----------------------------
+    // =============================
     // 公用語音函式
     function speakWord(text){
       window.speechSynthesis.cancel();
@@ -757,22 +831,6 @@
       utt.lang = "en-US";
       window.speechSynthesis.speak(utt);
     }
-    // ----------------------------
-    // 重新考試按鈕處理：點擊後顯示考試設定區，讓使用者重新設定
-    document.getElementById("restartExamBtn").addEventListener("click", restartExam);
-    function restartExam(){
-      resultPanel.style.display = "none";
-      examSettings.style.display = "block";
-      examPanel.style.display = "none";
-      // 若希望直接重啟考試，則可解開下面註解：
-      // currentExamIndex = 0;
-      // examScore = 0;
-      // examTotalTime = 0;
-      // examSettings.style.display = "none";
-      // examPanel.style.display = "block";
-      // startExam();
-    }
-    // ----------------------------
     // 頁面載入時更新排行榜
     window.addEventListener("load", () => {
       loadCombinedLeaderboard();

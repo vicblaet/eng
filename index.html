@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>單字學習考試 V21</title>
+  <title>單字學習考試 V27</title>
   <!-- Firebase 相容版本 -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -284,7 +284,7 @@
         <input type="text" id="examNickname" placeholder="" />
       </label>
       <button id="randomNickBtn">隨機暱稱</button>
-      <!-- 顯示系統產生的隨機暱稱 -->
+      <!-- 顯示系統產生的隨機暱稱，提示文字改為 "➔ " -->
       <span id="suggestedNickname" style="margin-left:10px;color:#ccc;"></span>
     </div>
     <div>
@@ -355,35 +355,116 @@
       { word: "joke",       translation: "笑話",      image: "joke.png" }
     ];
 
-    // 隨機暱稱資料庫（示範陣列，可擴充）
-    const animals = ["蜜獾", "北極熊", "熊貓", "無尾熊", "樹懶", "浣熊", "老虎", "獅子", "大象", "猴子"];
-    const people = ["金城武", "車銀優", "梁山伯", "祝英台", "孔子", "孫中山", "岳飛", "武則天", "周恩來", "鄧小平"];
-    const titles = ["船長", "總統", "將軍", "博士", "教授", "主任", "先生", "小姐", "大師", "專家"];
-    const countries = ["美國", "新加坡", "英國", "法國", "日本", "韓國", "中國", "台灣", "紐西蘭", "凡蒂岡"];
-    function shuffleArray(arr) {
-      for(let i = arr.length - 1; i > 0; i--){
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-    }
-    function randomTwoLetters() {
-      const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      return letters.charAt(Math.floor(Math.random() * letters.length))
-           + letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    function randomFourDigits() {
-      let num = Math.floor(Math.random() * 10000);
-      return String(num).padStart(4, '0');
-    }
-    function generateRandomNickname(){
-      const useAnimal = Math.random() < 0.5;
-      const name = useAnimal
-         ? animals[Math.floor(Math.random() * animals.length)]
-         : people[Math.floor(Math.random() * people.length)];
-      const title = titles[Math.floor(Math.random() * titles.length)];
-      const country = countries[Math.floor(Math.random() * countries.length)];
-      return name + title + "-" + country + randomTwoLetters() + randomFourDigits();
-    }
+ 
+//沒放這個↓↓  按開始考試  會沒反應
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+//沒放這個↑↑  按開始考試  會沒反應
+ 
+// ------------------------------
+// 隨機暱稱組成邏輯更新
+// ------------------------------
+
+
+
+// 定義動物、食物、城市（各至少20項，必含指定項目）
+const animals = [
+  { zh: "蜜獾", en: "honey badger" },
+  { zh: "北極熊", en: "polar bear" },
+  { zh: "熊貓", en: "panda" },
+  { zh: "無尾熊", en: "koala" },
+  { zh: "樹懶", en: "sloth" },
+  { zh: "老虎", en: "tiger" },
+  { zh: "獅子", en: "lion" },
+  { zh: "大象", en: "elephant" },
+  { zh: "猴子", en: "monkey" },
+  { zh: "長頸鹿", en: "giraffe" },
+  { zh: "犀牛", en: "rhinoceros" },
+  { zh: "鱷魚", en: "crocodile" },
+  { zh: "袋鼠", en: "kangaroo" },
+  { zh: "鴕鳥", en: "ostrich" },
+  { zh: "刺蝟", en: "hedgehog" },
+  { zh: "海豚", en: "dolphin" },
+  { zh: "鯊魚", en: "shark" },
+  { zh: "企鵝", en: "penguin" },
+  { zh: "狼", en: "wolf" },
+  { zh: "狐狸", en: "fox" }
+];
+
+const foods = [
+  { zh: "巧克力", en: "cola" }, // 依範例：巧克力cola
+  { zh: "牛排", en: "steak" },
+  { zh: "雞排", en: "fried chicken" },
+  { zh: "豬排", en: "pork chop" },
+  { zh: "可樂", en: "cola" },
+  { zh: "汽水", en: "soda" },
+  { zh: "洋芋片", en: "potato chips" },
+  { zh: "披薩", en: "pizza" },
+  { zh: "漢堡", en: "hamburger" },
+  { zh: "壽司", en: "sushi" },
+  { zh: "冰淇淋", en: "ice cream" },
+  { zh: "薯條", en: "fries" },
+  { zh: "義大利麵", en: "pasta" },
+  { zh: "沙拉", en: "salad" },
+  { zh: "蛋糕", en: "cake" },
+  { zh: "麵包", en: "bread" },
+  { zh: "咖啡", en: "coffee" },
+  { zh: "茶", en: "tea" },
+  { zh: "果汁", en: "juice" },
+  { zh: "冰沙", en: "smoothie" }
+];
+
+const cities = [
+  { zh: "東京", en: "tokyo" },
+  { zh: "沖繩", en: "okinawa" },
+  { zh: "巴黎", en: "paris" },
+  { zh: "維也納", en: "vienna" },
+  { zh: "巴賽隆納", en: "barcelona" },
+  { zh: "杜拜", en: "dubai" },
+  { zh: "紐約", en: "new york" },
+  { zh: "倫敦", en: "london" },
+  { zh: "洛杉磯", en: "los angeles" },
+  { zh: "舊金山", en: "san francisco" },
+  { zh: "芝加哥", en: "chicago" },
+  { zh: "多倫多", en: "toronto" },
+  { zh: "雪梨", en: "sydney" },
+  { zh: "墨爾本", en: "melbourne" },
+  { zh: "首爾", en: "seoul" },
+  { zh: "上海", en: "shanghai" },
+  { zh: "香港", en: "hong kong" },
+  { zh: "新加坡", en: "singapore" },
+  { zh: "羅馬", en: "rome" },
+  { zh: "慕尼黑", en: "munich" }
+];
+
+// 隨機產生四位數字
+function randomFourDigits() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+// 更新後的隨機暱稱產生邏輯：
+// 類別1：從動物、食物、城市中隨機選一個（取中文）
+// 類別2：獨立隨機從動物、食物、城市中隨機選一個（取英文），不必與類別1相對應
+function generateRandomNickname() {
+  const categories = [animals, foods, cities];
+  const cat1 = categories[Math.floor(Math.random() * categories.length)];
+  const item1 = cat1[Math.floor(Math.random() * cat1.length)];
+
+  const cat2 = categories[Math.floor(Math.random() * categories.length)];
+  const item2 = cat2[Math.floor(Math.random() * cat2.length)];
+
+  return item1.zh + item2.en + "-" + randomFourDigits();
+}
+
+//--------------
+
+   
+   
+   
     function speakWord(text){
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
@@ -414,35 +495,40 @@
       }
       // 合併兩組成績
       let combined = localLB.concat(firebaseLB);
-      // 去除完全相同的資料（暱稱、分數、time相同視為重複）
-      combined = combined.filter((entry, index, self) => {
-        const displayName = entry.name || entry.nickname;
-        return index === self.findIndex(e =>
-          (e.name || e.nickname) === displayName &&
-          e.score === entry.score &&
-          e.time === entry.time
-        );
+      // 利用 Map 去重：以暱稱(trim) + "|" + 分數(Number) + "|" + 總作答時間(Number.toFixed(2)) 作為唯一鍵
+      let uniqueMap = new Map();
+      combined.forEach(entry => {
+        const name = ((entry.name || entry.nickname) || "").trim();
+        const score = Number(entry.score);
+        const time = Number(entry.time).toFixed(2);
+        const key = `${name}|${score}|${time}`;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, { 
+            nickname: name, 
+            score: score, 
+            time: Number(time) 
+          });
+        }
       });
-      // 排序依分數高低，分數相同則以作答時間較短為佳
-      combined.sort((a, b) => {
+      let deduped = Array.from(uniqueMap.values());
+      // 排序：依分數高低，若分數相同則以作答時間較短為佳
+      deduped.sort((a, b) => {
         if(b.score === a.score) return a.time - b.time;
         return b.score - a.score;
       });
       // 選出前 10 筆
-      combined = combined.slice(0, 10);
+      deduped = deduped.slice(0, 10);
       const tbody = document.getElementById("globalLeaderboardBody");
       tbody.innerHTML = "";
-      if(combined.length === 0) {
+      if(deduped.length === 0) {
          tbody.innerHTML = "<tr><td colspan='4'>目前尚無排行榜資料。</td></tr>";
       } else {
-        combined.forEach((entry, idx) => {
+        deduped.forEach((entry, idx) => {
            const tr = document.createElement("tr");
-           // Firebase 存入的暱稱欄位名稱為 name，localStorage 為 nickname
-           const displayName = entry.name || entry.nickname;
            tr.innerHTML = `<td>${idx + 1}</td>
-                           <td>${displayName}</td>
+                           <td>${entry.nickname}</td>
                            <td>${entry.score}</td>
-                           <td>${parseFloat(entry.time).toFixed(2)}</td>`;
+                           <td>${entry.time.toFixed(2)}</td>`;
            tbody.appendChild(tr);
         });
       }
@@ -467,10 +553,10 @@
         examSettings.style.display = "block";
         examPanel.style.display = "none";
         resultPanel.style.display = "none";
-        // 初始化隨機暱稱填入，並更新旁邊提示
+        // 初始化隨機暱稱填入，並更新提示（提示文字改為 "➔ "）
         const newNick = generateRandomNickname();
         document.getElementById("examNickname").value = "";
-        document.getElementById("suggestedNickname").textContent = "系統建議：" + newNick;
+        document.getElementById("suggestedNickname").textContent = "➔ " + newNick;
       }
       headerFinishExamBtn.style.display = "none";
       // 每次模式切換時更新排行榜
@@ -513,8 +599,7 @@
     // =============================
     document.getElementById("randomNickBtn").addEventListener("click", () => {
       const newNick = generateRandomNickname();
-      // 更新提示區塊，input 保持空白讓使用者自行填寫
-      document.getElementById("suggestedNickname").textContent = "系統建議：" + newNick;
+      document.getElementById("suggestedNickname").textContent = "➔ " + newNick;
     });
     const startExamBtn = document.getElementById("startExamBtn");
     let examTimeLimit = 5;
@@ -534,7 +619,7 @@
     startExamBtn.addEventListener("click", startExam);
     function startExam(){
       const nickInput = document.getElementById("examNickname").value.trim();
-      const userNick = nickInput === "" ? (document.getElementById("suggestedNickname").textContent.replace("系統建議：","") || generateRandomNickname()) : nickInput;
+      const userNick = nickInput === "" ? (document.getElementById("suggestedNickname").textContent.replace("➔ ","") || generateRandomNickname()) : nickInput;
       localStorage.setItem("nickname", userNick);
       const t = parseInt(document.getElementById("examTime").value);
       examTimeLimit = (!isNaN(t) && t >= 1 && t <= 100) ? t : 5;
@@ -672,7 +757,7 @@
       loadCombinedLeaderboard();
     }
     // =============================
-    // 將考試成績寫入 localStorage（儲存格式：{nickname, score, time}）
+    // 將考試成績寫入 localStorage（格式：{nickname, score, time}）
     function updateLocalLeaderboard(){
       let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
       const nickname = localStorage.getItem("nickname") || generateRandomNickname();

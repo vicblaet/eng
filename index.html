@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>單字學習考試 V14</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>單字學習考試 V21</title>
   <!-- Firebase 相容版本 -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script>
-    // 請將下列 firebaseConfig 替換為您的設定
+    // 請確認 firebaseConfig 與您的專案一致
     const firebaseConfig = {
       apiKey: "AIzaSyDvHvJBoDrfqXMZ-04DV6cmx-6ggw_skl0",
       authDomain: "engg-3c3b6.firebaseapp.com",
@@ -22,21 +22,25 @@
     const db = firebase.firestore();
   </script>
   <style>
-    /* 全站風格：背景黑色，按鈕無陰影 */
+    /* 全站背景黑色、文字白色 */
     body {
-      font-family: Arial, sans-serif;
-      background: #000;
+      background-color: #000;
       color: #fff;
+      font-family: Arial, sans-serif;
       text-align: center;
-      margin: 20px;
+      padding: 20px;
+      margin: 0;
     }
     h1, h2 {
       margin-bottom: 20px;
     }
+    header {
+      margin-bottom: 20px;
+    }
     header button {
       padding: 8px 16px;
+      margin: 4px;
       font-size: 16px;
-      margin: 0 5px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -92,10 +96,10 @@
     }
     .toggle-buttons button {
       padding: 10px 20px;
+      margin: 0 10px;
       font-size: 16px;
       border: none;
       border-radius: 4px;
-      margin: 0 10px;
       cursor: pointer;
       background-color: #28a745;
       color: #fff;
@@ -122,8 +126,8 @@
     }
     #examSettings button {
       padding: 8px 16px;
-      font-size: 16px;
       margin-top: 10px;
+      font-size: 16px;
       border: none;
       border-radius: 4px;
       background-color: #007bff;
@@ -161,7 +165,7 @@
       background-color: #0056b3;
     }
     #optionsContainer {
-      margin: 15px 0;
+      margin: 10px 0;
     }
     #optionsContainer button.option {
       padding: 10px 15px;
@@ -187,16 +191,15 @@
       color: #fff;
       cursor: pointer;
       display: none;
-      margin-top: 15px;
+      margin-top: 10px;
     }
     #nextBtn:hover {
       background-color: #0056b3;
     }
     .examInfo {
+      margin: 6px 0;
       font-size: 18px;
-      margin: 5px 0;
     }
-    /* 答錯顯示區 */
     #correctDisplay {
       font-size: 18px;
       color: #ff4444;
@@ -211,7 +214,7 @@
       margin: 5px auto;
       cursor: pointer;
     }
-    /* 結果與排行榜區 */
+    /* 考試結束 */
     #resultPanel {
       display: none;
       padding: 15px;
@@ -220,13 +223,9 @@
       border: 1px solid #444;
       margin-top: 20px;
     }
-    #resultPanel table {
-      margin: 0 auto;
-      border-collapse: collapse;
-    }
-    #resultPanel th, #resultPanel td {
-      padding: 8px 12px;
-      border: 1px solid #666;
+    #resultPanel p {
+      font-size: 18px;
+      margin: 10px 0;
     }
     #resultPanel button {
       margin-top: 15px;
@@ -241,7 +240,7 @@
     #resultPanel button:hover {
       background-color: #0056b3;
     }
-    /* 全站排行榜 */
+    /* 合併排行榜 */
     #globalLeaderboard {
       margin-top: 30px;
       padding: 15px;
@@ -263,10 +262,10 @@
   <header>
     <button onclick="showMode('vocab')">學習模式</button>
     <button onclick="showMode('examSetup')">考試模式</button>
-    <!-- 結束考試按鈕放在 header，僅考試進行中時顯示 -->
-    <button id="headerFinishExamBtn" onclick="headerFinishExam()" style="display:none;">結束考試</button>
+    <!-- 考試模式下的結束考試按鈕 -->
+    <button id="headerFinishExamBtn" style="display:none;" onclick="headerFinishExam()">結束考試</button>
   </header>
-  
+
   <!-- 學習模式 -->
   <div id="vocabPanel">
     <h2>學習模式</h2>
@@ -276,75 +275,54 @@
       <button id="btn-english">只有英文</button>
     </div>
   </div>
-  
+
   <!-- 考試設定區 -->
   <div id="examSettings">
     <h2>考試設定</h2>
     <div>
       <label>暱稱：
-        <input type="text" id="examNickname" placeholder="請輸入暱稱">
+        <input type="text" id="examNickname" placeholder="" />
       </label>
-      <span id="defaultNickDisp" style="margin-left:10px;">預設：<em id="defaultNickEm"></em></span>
-      <button id="randomNickBtn">隨機</button>
+      <button id="randomNickBtn">隨機暱稱</button>
+      <!-- 顯示系統產生的隨機暱稱 -->
+      <span id="suggestedNickname" style="margin-left:10px;color:#ccc;"></span>
     </div>
     <div>
       <label>作答時間 (秒)：
-        <input type="number" id="examTime" min="1" max="100" placeholder="1-100">
+        <input type="number" id="examTime" placeholder="1-100" min="1" max="100" />
       </label>
       <span>（若空，預設 5 秒）</span>
     </div>
     <div>
-      <label>
-        <input type="radio" name="examMode" value="repeat">
-        隨機
-      </label>
-      <label>
-        <input type="radio" name="examMode" value="nonrepeat" checked>
-        隨機不重複
-      </label>
+      <label><input type="radio" name="examMode" value="repeat">隨機</label>
+      <label><input type="radio" name="examMode" value="nonrepeat" checked>隨機不重複</label>
     </div>
     <div style="margin-top:10px;">
-      <button id="startExamBtn">考 試</button>
+      <button id="startExamBtn">開始考試</button>
     </div>
   </div>
-  
+
   <!-- 考試模式 -->
   <div id="examPanel">
     <h2>考試進行中</h2>
     <p class="examInfo">題號：<span id="examQNo"></span> / 10</p>
-    <!-- 題目英文單字按鈕（點擊可重播語音） -->
     <button id="examQuestionBtn" class="questionWord"></button>
     <div id="optionsContainer"></div>
     <p class="examInfo">剩餘作答時間：<span id="examTimer">0.00</span> 秒</p>
     <p class="examInfo">總作答時間：<span id="totalTime">0.00</span> 秒</p>
     <p class="examInfo">目前得分：<span id="examScore">0</span></p>
-    <!-- header 的【結束考試】按鈕同步控制，於此區不再重複顯示 -->
-    <!-- 答錯時顯示正確答案與圖片 -->
     <div id="correctDisplay"></div>
-    <!-- 當答錯時顯示【下一題】按鈕 -->
-    <button id="nextBtn">下一題</button>
+    <button id="nextBtn" style="display:none;">下一題</button>
   </div>
-  
-  <!-- 結果與排行榜區 -->
+
+  <!-- 考試結束結果 -->
   <div id="resultPanel">
     <h2>考試結束！</h2>
     <p>你的分數：<span id="finalScore"></span> 分，總作答時間：<span id="finalTime"></span> 秒</p>
     <button onclick="location.reload()">重新考試</button>
-    <h2>排行榜</h2>
-    <table id="leaderboardTable">
-      <thead>
-        <tr>
-          <th>名次</th>
-          <th>暱稱</th>
-          <th>分數</th>
-          <th>總作答時間 (秒)</th>
-        </tr>
-      </thead>
-      <tbody id="leaderboardBody"></tbody>
-    </table>
   </div>
-  
-  <!-- 全站排行榜 -->
+
+  <!-- 合併排行榜 -->
   <div id="globalLeaderboard">
     <h2>排行榜</h2>
     <table id="globalLeaderboardTable">
@@ -359,11 +337,11 @@
       <tbody id="globalLeaderboardBody"></tbody>
     </table>
   </div>
-  
+
   <script>
-    /* ===============================
-       資料定義
-    =============================== */
+    // =============================
+    // 共用單字資料
+    // =============================
     const wordsData = [
       { word: "apple",      translation: "蘋果",      image: "apple.png" },
       { word: "book",       translation: "書",        image: "book.png" },
@@ -376,140 +354,196 @@
       { word: "ice cream",  translation: "冰淇淋",    image: "icecream.png" },
       { word: "joke",       translation: "笑話",      image: "joke.png" }
     ];
-    // 隨機暱稱資料（示範數量，可自行擴充至20+項）
+
+    // 隨機暱稱資料庫（示範陣列，可擴充）
     const animals = ["蜜獾", "北極熊", "熊貓", "無尾熊", "樹懶", "浣熊", "老虎", "獅子", "大象", "猴子"];
     const people = ["金城武", "車銀優", "梁山伯", "祝英台", "孔子", "孫中山", "岳飛", "武則天", "周恩來", "鄧小平"];
     const titles = ["船長", "總統", "將軍", "博士", "教授", "主任", "先生", "小姐", "大師", "專家"];
     const countries = ["美國", "新加坡", "英國", "法國", "日本", "韓國", "中國", "台灣", "紐西蘭", "凡蒂岡"];
-    function shuffleArray(array) {
-      for(let i = array.length - 1; i > 0; i--){
+    function shuffleArray(arr) {
+      for(let i = arr.length - 1; i > 0; i--){
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
     }
     function randomTwoLetters() {
       const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      return letters.charAt(Math.floor(Math.random()*letters.length)) +
-             letters.charAt(Math.floor(Math.random()*letters.length));
+      return letters.charAt(Math.floor(Math.random() * letters.length))
+           + letters.charAt(Math.floor(Math.random() * letters.length));
     }
     function randomFourDigits() {
       let num = Math.floor(Math.random() * 10000);
-      return num.toString().padStart(4, "0");
+      return String(num).padStart(4, '0');
     }
-    function generateRandomNickname() {
+    function generateRandomNickname(){
       const useAnimal = Math.random() < 0.5;
-      const name = useAnimal 
-          ? animals[Math.floor(Math.random()*animals.length)]
-          : people[Math.floor(Math.random()*people.length)];
-      const title = titles[Math.floor(Math.random()*titles.length)];
-      const country = countries[Math.floor(Math.random()*countries.length)];
+      const name = useAnimal
+         ? animals[Math.floor(Math.random() * animals.length)]
+         : people[Math.floor(Math.random() * people.length)];
+      const title = titles[Math.floor(Math.random() * titles.length)];
+      const country = countries[Math.floor(Math.random() * countries.length)];
       return name + title + "-" + country + randomTwoLetters() + randomFourDigits();
     }
-    
-    /* ===============================
-       模式切換：學習模式 & 考試模式設定
-    =============================== */
-    const vocabPanel = document.getElementById("vocabPanel");
-    const examSettings = document.getElementById("examSettings");
-    const examPanel = document.getElementById("examPanel");
-    const resultPanel = document.getElementById("resultPanel");
-    
-    function showMode(mode) {
-      if(mode === "vocab") {
-        vocabPanel.style.display = "block";
-        examSettings.style.display = "none";
-        examPanel.style.display = "none";
-        resultPanel.style.display = "none";
-        document.getElementById("headerFinishExamBtn").style.display = "none";
-      } else if(mode === "examSetup") {
-        vocabPanel.style.display = "none";
-        examSettings.style.display = "block";
-        examPanel.style.display = "none";
-        resultPanel.style.display = "none";
-        const defNick = generateRandomNickname();
-        document.getElementById("defaultNickEm").textContent = defNick;
-        document.getElementById("examNickname").value = defNick;
-        document.getElementById("headerFinishExamBtn").style.display = "none";
-      }
-    }
-    // 預設顯示學習模式
-    showMode("vocab");
-    
-    /* ===============================
-       學習模式建立
-    =============================== */
-    const vocabContainer = document.getElementById("vocabContainer");
-    wordsData.forEach((item, index) => {
-      const div = document.createElement("div");
-      div.className = "word-container";
-      div.id = "vocab-" + index;
-      const btn = document.createElement("button");
-      btn.textContent = item.word;
-      btn.addEventListener("click", () => { speakWord(item.word); });
-      div.appendChild(btn);
-      const extraDiv = document.createElement("div");
-      extraDiv.className = "extra";
-      extraDiv.id = "extra-" + index;
-      div.appendChild(extraDiv);
-      vocabContainer.appendChild(div);
-    });
-    function speakWord(text) {
+    function speakWord(text){
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = "en-US";
       window.speechSynthesis.speak(utt);
     }
+
+    // =============================
+    // 合併排行榜載入（去重）
+    // =============================
+    async function loadCombinedLeaderboard() {
+      // 讀取 localStorage 成績（格式：{nickname, score, time}）
+      let localLB = JSON.parse(localStorage.getItem("leaderboard")) || [];
+      // 從 Firebase 取得成績（以 limit 50 為示範）
+      let firebaseLB = [];
+      try {
+        const querySnapshot = await firebase.firestore()
+          .collection("examResults")
+          .orderBy("score", "desc")
+          .orderBy("time", "asc")
+          .limit(50)
+          .get();
+        querySnapshot.forEach(doc => {
+          firebaseLB.push(doc.data());
+        });
+      } catch(e) {
+        console.error("Error fetching firebase leaderboard", e);
+      }
+      // 合併兩組成績
+      let combined = localLB.concat(firebaseLB);
+      // 去除完全相同的資料（暱稱、分數、time相同視為重複）
+      combined = combined.filter((entry, index, self) => {
+        const displayName = entry.name || entry.nickname;
+        return index === self.findIndex(e =>
+          (e.name || e.nickname) === displayName &&
+          e.score === entry.score &&
+          e.time === entry.time
+        );
+      });
+      // 排序依分數高低，分數相同則以作答時間較短為佳
+      combined.sort((a, b) => {
+        if(b.score === a.score) return a.time - b.time;
+        return b.score - a.score;
+      });
+      // 選出前 10 筆
+      combined = combined.slice(0, 10);
+      const tbody = document.getElementById("globalLeaderboardBody");
+      tbody.innerHTML = "";
+      if(combined.length === 0) {
+         tbody.innerHTML = "<tr><td colspan='4'>目前尚無排行榜資料。</td></tr>";
+      } else {
+        combined.forEach((entry, idx) => {
+           const tr = document.createElement("tr");
+           // Firebase 存入的暱稱欄位名稱為 name，localStorage 為 nickname
+           const displayName = entry.name || entry.nickname;
+           tr.innerHTML = `<td>${idx + 1}</td>
+                           <td>${displayName}</td>
+                           <td>${entry.score}</td>
+                           <td>${parseFloat(entry.time).toFixed(2)}</td>`;
+           tbody.appendChild(tr);
+        });
+      }
+    }
+
+    // =============================
+    // 模式切換
+    // =============================
+    const vocabPanel = document.getElementById("vocabPanel");
+    const examSettings = document.getElementById("examSettings");
+    const examPanel = document.getElementById("examPanel");
+    const resultPanel = document.getElementById("resultPanel");
+    const headerFinishExamBtn = document.getElementById("headerFinishExamBtn");
+    function showMode(mode) {
+      if (mode === "vocab") {
+        vocabPanel.style.display = "block";
+        examSettings.style.display = "none";
+        examPanel.style.display = "none";
+        resultPanel.style.display = "none";
+      } else if (mode === "examSetup") {
+        vocabPanel.style.display = "none";
+        examSettings.style.display = "block";
+        examPanel.style.display = "none";
+        resultPanel.style.display = "none";
+        // 初始化隨機暱稱填入，並更新旁邊提示
+        const newNick = generateRandomNickname();
+        document.getElementById("examNickname").value = "";
+        document.getElementById("suggestedNickname").textContent = "系統建議：" + newNick;
+      }
+      headerFinishExamBtn.style.display = "none";
+      // 每次模式切換時更新排行榜
+      loadCombinedLeaderboard();
+    }
+    showMode("vocab");
+
+    // =============================
+    // 學習模式建立
+    // =============================
+    const vocabContainer = document.getElementById("vocabContainer");
     document.getElementById("btn-translate").addEventListener("click", () => {
       wordsData.forEach((item, index) => {
         document.getElementById("extra-" + index).innerHTML = `<img src="${item.image}" alt="${item.word}"><br>${item.translation}`;
       });
     });
     document.getElementById("btn-english").addEventListener("click", () => {
-      wordsData.forEach((item, index) => {
+      wordsData.forEach((_, index) => {
         document.getElementById("extra-" + index).innerHTML = "";
       });
     });
-    
-    /* ===============================
-       考試模式設定區
-    =============================== */
+    // 建立學習模式單字按鈕
+    wordsData.forEach((item, idx) => {
+      const div = document.createElement("div");
+      div.className = "word-container";
+      div.id = "vocab-" + idx;
+      const btn = document.createElement("button");
+      btn.textContent = item.word;
+      btn.addEventListener("click", () => speakWord(item.word));
+      div.appendChild(btn);
+      const extraDiv = document.createElement("div");
+      extraDiv.className = "extra";
+      extraDiv.id = "extra-" + idx;
+      div.appendChild(extraDiv);
+      vocabContainer.appendChild(div);
+    });
+
+    // =============================
+    // 考試設定區
+    // =============================
     document.getElementById("randomNickBtn").addEventListener("click", () => {
       const newNick = generateRandomNickname();
-      document.getElementById("defaultNickEm").textContent = newNick;
-      document.getElementById("examNickname").value = newNick;
+      // 更新提示區塊，input 保持空白讓使用者自行填寫
+      document.getElementById("suggestedNickname").textContent = "系統建議：" + newNick;
     });
-    
     const startExamBtn = document.getElementById("startExamBtn");
-    let examTimeLimit = 5; // 每題作答時間（秒）
-    let examQuestions = []; // 考題陣列
+    let examTimeLimit = 5;
+    let examQuestions = [];
     let currentExamIndex = 0;
     let examScore = 0;
     let examTimerInterval;
-    let examQuestionStart; // 每題開始計時毫秒
-    let examTotalTime = 0; // 累計作答時間（秒）
+    let examQuestionStart = 0;
+    let examTotalTime = 0;
     let examAnswered = false;
     let examModeOption = "nonrepeat";
-    
     document.querySelectorAll('input[name="examMode"]').forEach(radio => {
-      radio.addEventListener("change", function() {
+      radio.addEventListener("change", function(){
         examModeOption = this.value;
       });
     });
-    
     startExamBtn.addEventListener("click", startExam);
-    
-    function startExam() {
+    function startExam(){
       const nickInput = document.getElementById("examNickname").value.trim();
-      const userNick = nickInput === "" ? document.getElementById("defaultNickEm").textContent : nickInput;
+      const userNick = nickInput === "" ? (document.getElementById("suggestedNickname").textContent.replace("系統建議：","") || generateRandomNickname()) : nickInput;
       localStorage.setItem("nickname", userNick);
       const t = parseInt(document.getElementById("examTime").value);
-      examTimeLimit = (!isNaN(t) && t>=1 && t<=100) ? t : 5;
-      if(examModeOption === "nonrepeat") {
+      examTimeLimit = (!isNaN(t) && t >= 1 && t <= 100) ? t : 5;
+      if(examModeOption === "nonrepeat"){
         examQuestions = wordsData.slice();
         shuffleArray(examQuestions);
       } else {
         examQuestions = [];
-        for(let i=0; i<10; i++){
+        for(let i = 0; i < 10; i++){
           examQuestions.push(wordsData[Math.floor(Math.random() * wordsData.length)]);
         }
       }
@@ -517,35 +551,31 @@
       examScore = 0;
       examTotalTime = 0;
       document.getElementById("examScore").textContent = examScore;
-      // 考試開始後，顯示 header 結束考試按鈕
-      document.getElementById("headerFinishExamBtn").style.display = "inline-block";
+      headerFinishExamBtn.style.display = "inline-block";
       examSettings.style.display = "none";
       examPanel.style.display = "block";
       resultPanel.style.display = "none";
       loadExamQuestion();
     }
-    
-    function loadExamQuestion() {
+    function loadExamQuestion(){
       examAnswered = false;
       document.getElementById("correctDisplay").innerHTML = "";
       document.getElementById("nextBtn").style.display = "none";
       document.getElementById("optionsContainer").innerHTML = "";
-      if(currentExamIndex >= examQuestions.length) {
+      if(currentExamIndex >= examQuestions.length){
         finishExam();
         return;
       }
-      const currentData = examQuestions[currentExamIndex];
+      const data = examQuestions[currentExamIndex];
       document.getElementById("examQNo").textContent = currentExamIndex + 1;
       const examQBtn = document.getElementById("examQuestionBtn");
-      examQBtn.textContent = currentData.word;
-      examQBtn.onclick = () => { playExamWord(currentData.word); };
-      // 播放題目語音後立即開始倒數計時
-      playExamWord(currentData.word);
+      examQBtn.textContent = data.word;
+      examQBtn.onclick = () => { speakWord(data.word); };
+      headerFinishExamBtn.style.display = "inline-block";
+      playExamWord(data.word);
       startExamTimer();
-      // 產生選項：正確答案與 3 個不重複錯誤答案
-      const correct = currentData.translation;
-      let wrongArr = wordsData.filter(item => item.translation !== correct)
-                              .map(item => item.translation);
+      const correct = data.translation;
+      let wrongArr = wordsData.filter(item => item.translation !== correct).map(item => item.translation);
       shuffleArray(wrongArr);
       wrongArr = wrongArr.slice(0, 3);
       let options = wrongArr.concat(correct);
@@ -560,46 +590,42 @@
       document.getElementById("examTimer").textContent = examTimeLimit.toFixed(2);
       document.getElementById("totalTime").textContent = examTotalTime.toFixed(2);
     }
-    
-    function playExamWord(word) {
+    function playExamWord(word){
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(word);
       utt.lang = "en-US";
       window.speechSynthesis.speak(utt);
     }
-    
-    function startExamTimer() {
+    function startExamTimer(){
       examQuestionStart = Date.now();
       clearInterval(examTimerInterval);
       examTimerInterval = setInterval(updateExamTimer, 50);
     }
-    
-    function updateExamTimer() {
+    function updateExamTimer(){
       const elapsed = (Date.now() - examQuestionStart) / 1000;
-      let remaining = examTimeLimit - elapsed;
-      if(remaining <= 0) {
-        remaining = 0;
-        document.getElementById("examTimer").textContent = remaining.toFixed(2);
+      let remain = examTimeLimit - elapsed;
+      if(remain <= 0){
+        remain = 0;
+        document.getElementById("examTimer").textContent = remain.toFixed(2);
         clearInterval(examTimerInterval);
-        if(!examAnswered) {
+        if(!examAnswered){
           examTotalTime += examTimeLimit;
           showCorrectAnswer();
           examAnswered = true;
           document.getElementById("nextBtn").style.display = "inline-block";
         }
       } else {
-        document.getElementById("examTimer").textContent = remaining.toFixed(2);
+        document.getElementById("examTimer").textContent = remain.toFixed(2);
       }
       document.getElementById("totalTime").textContent = (examTotalTime + Math.min(elapsed, examTimeLimit)).toFixed(2);
     }
-    
-    function answerExam(selected) {
+    function answerExam(selected){
       examAnswered = true;
       clearInterval(examTimerInterval);
       const elapsed = (Date.now() - examQuestionStart) / 1000;
       examTotalTime += Math.min(elapsed, examTimeLimit);
-      const currentData = examQuestions[currentExamIndex];
-      if(selected === currentData.translation) {
+      const data = examQuestions[currentExamIndex];
+      if(selected === data.translation){
         examScore += 10;
         document.getElementById("examScore").textContent = examScore;
         setTimeout(() => {
@@ -614,119 +640,84 @@
       document.querySelectorAll("#optionsContainer button.option")
               .forEach(btn => btn.disabled = true);
     }
-    
-    function showCorrectAnswer() {
-      const currentData = examQuestions[currentExamIndex];
-      document.getElementById("correctDisplay").innerHTML = `正確答案：${currentData.translation}<br>
-        <img src="${currentData.image}" alt="${currentData.word}" id="correctImg">`;
+    function showCorrectAnswer(){
+      const data = examQuestions[currentExamIndex];
+      document.getElementById("correctDisplay").innerHTML = `正確答案：${data.translation}<br><img src="${data.image}" alt="${data.word}" id="correctImg">`;
       document.getElementById("correctImg").addEventListener("click", () => {
-        speakWord(currentData.word);
+        speakWord(data.word);
       });
     }
-    
     document.getElementById("nextBtn").addEventListener("click", () => {
       currentExamIndex++;
       loadExamQuestion();
     });
-    
-    function finishExam() {
+    function finishExam(){
       clearInterval(examTimerInterval);
       examPanel.style.display = "none";
-      document.getElementById("headerFinishExamBtn").style.display = "none";
+      headerFinishExamBtn.style.display = "none";
       showResults();
     }
-    
-    // header 結束考試按鈕
-    function headerFinishExam() {
+    function headerFinishExam(){
       finishExam();
     }
-    
-    function showResults() {
+    function showResults(){
       resultPanel.style.display = "block";
       document.getElementById("finalScore").textContent = examScore;
       document.getElementById("finalTime").textContent = examTotalTime.toFixed(2);
-      updateLeaderboard();
+      // 更新 localStorage 排行榜
+      updateLocalLeaderboard();
+      // 上傳成績至 Firebase
       uploadExamResult();
+      // 更新合併排行榜
+      loadCombinedLeaderboard();
     }
-    
-    /* ===============================
-       排行榜（localStorage）
-    =============================== */
-    function updateLeaderboard() {
+    // =============================
+    // 將考試成績寫入 localStorage（儲存格式：{nickname, score, time}）
+    function updateLocalLeaderboard(){
       let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || [];
       const nickname = localStorage.getItem("nickname") || generateRandomNickname();
-      leaderboard.push({ nickname: nickname, score: parseInt(examScore, 10), time: parseFloat(examTotalTime.toFixed(2)) });
+      leaderboard.push({
+        nickname: nickname,
+        score: parseInt(examScore, 10),
+        time: parseFloat(examTotalTime.toFixed(2))
+      });
       leaderboard.sort((a, b) => {
         if(b.score === a.score) return a.time - b.time;
         return b.score - a.score;
       });
       leaderboard = leaderboard.slice(0, 10);
       localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
-      displayLeaderboard(leaderboard);
-      displayGlobalLeaderboard(leaderboard);
     }
-    
-    function displayLeaderboard(lb) {
-      const lbBody = document.getElementById("leaderboardBody");
-      lbBody.innerHTML = "";
-      lb.forEach((entry, index) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${index+1}</td>
-                        <td>${entry.nickname}</td>
-                        <td>${entry.score}</td>
-                        <td>${entry.time.toFixed(2)}</td>`;
-        lbBody.appendChild(tr);
-      });
+    // =============================
+    // 將考試成績上傳至 Firebase Firestore
+    function uploadExamResult(){
+      const nickname = localStorage.getItem("nickname") || generateRandomNickname();
+      const examResult = {
+        name: nickname,
+        score: examScore,
+        time: examTotalTime,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      firebase.firestore().collection("examResults").add(examResult)
+        .then(() => {
+          console.log("成績上傳成功");
+        })
+        .catch((error) => {
+          console.error("成績上傳失敗", error);
+        });
     }
-    
-    function displayGlobalLeaderboard(lb) {
-      const gBody = document.getElementById("globalLeaderboardBody");
-      gBody.innerHTML = "";
-      lb.forEach((entry, index) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${index+1}</td>
-                        <td>${entry.nickname}</td>
-                        <td>${entry.score}</td>
-                        <td>${entry.time.toFixed(2)}</td>`;
-        gBody.appendChild(tr);
-      });
-    }
-    
-    /* ===============================
-       公用語音函式
-    =============================== */
-    function speakWord(text) {
+    // =============================
+    // 公用語音函式
+    function speakWord(text){
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = "en-US";
       window.speechSynthesis.speak(utt);
     }
-    
-    /* ===============================
-       當頁面載入時讀取並顯示全站排行榜
-    =============================== */
+    // 頁面載入時更新排行榜
     window.addEventListener("load", () => {
-      const lb = JSON.parse(localStorage.getItem("leaderboard")) || [];
-      displayGlobalLeaderboard(lb);
+      loadCombinedLeaderboard();
     });
-    
-    /* ===============================
-       Firebase 上傳成績
-    =============================== */
-    function uploadExamResult() {
-      db.collection("examResults").add({
-        nickname: localStorage.getItem("nickname"),
-        score: examScore,
-        time: examTotalTime,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        console.log("Exam result uploaded to Firebase.");
-      })
-      .catch((error) => {
-        console.error("Error uploading exam result:", error);
-      });
-    }
   </script>
 </body>
 </html>
